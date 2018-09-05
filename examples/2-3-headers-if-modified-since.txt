@@ -1,0 +1,7 @@
+# request
+GET /static/rfc2616.txt HTTP/1.1
+Host: localhost
+If-Modified-Since: Fri, 11 Jun 1999 18:46:53 GMT
+
+# command
+curl -I -H 'If-Modified-Since: Fri, 11 Jun 1999 18:46:53 GMT' http://localhost:8080/static/rfc2616.txt

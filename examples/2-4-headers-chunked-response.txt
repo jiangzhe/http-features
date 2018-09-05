@@ -1,0 +1,11 @@
+# request
+GET /chunks HTTP/1.1
+Host: localhost
+
+# command
+curl http://localhost:8080/chunks
+
+ncat localhost 8080
+GET /chunks HTTP/1.1
+Host: localhost
+

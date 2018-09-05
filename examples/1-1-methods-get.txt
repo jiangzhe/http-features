@@ -1,0 +1,6 @@
+# request
+GET /static/rfc2616.txt
+Host: localhost
+
+# command
+curl http://localhost:8080/static/rfc2616.txt

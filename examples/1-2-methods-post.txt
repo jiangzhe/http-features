@@ -1,0 +1,12 @@
+# request
+POST /requests?key=value HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 11
+Connection: close
+
+hello=world
+
+
+# command
+curl -kv -X POST 'http://localhost:8080/requests?key=value' -d "hello=world"
