@@ -1,0 +1,10 @@
+# command
+
+telnet localhost 8080
+
+CONNECT www.warpcloud.cn:80 HTTP/1.1
+Proxy-Connection: Keep-Alive
+
+GET / HTTP/1.1
+Host: www.warpcloud.cn
+

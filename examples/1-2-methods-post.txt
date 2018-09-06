@@ -10,3 +10,15 @@ hello=world
 
 # command
 curl -kv -X POST 'http://localhost:8080/requests?key=value' -d "hello=world"
+
+
+
+# request
+POST /requests?key=value HTTP/1.1
+Host: localhost
+Content-Type: application/json
+Content-Length: 17
+Connection: close
+
+{"hello":"world"}
+
