@@ -1,0 +1,3 @@
+# in browser
+https://search.yahoo.com/search?p=hello&p=world
+https://www.google.com/search?q=hello&q=world
