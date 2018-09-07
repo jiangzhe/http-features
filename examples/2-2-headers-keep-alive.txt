@@ -1,7 +1,6 @@
 # request
 GET /static/rfc2616.txt HTTP/1.1
 Host: localhost
-Accept: application/json
 
 # command
-curl -I -H 'Accept: application/json' http://localhost:8080/static/rfc2616.txt
+curl -I -H 'Connection: keep-alive' http://localhost:8080/static/rfc2616.txt

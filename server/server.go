@@ -14,9 +14,13 @@ import (
 	"net"
 	"sync"
 	"crypto/tls"
+	"strconv"
+	"bytes"
+	"net/url"
+	"html"
 )
 
-const staticDir = "/home/jiangzhe/go/src/http-examples/static"
+const staticDir = "/home/jiangzhe/go/src/http-features/static"
 
 func main() {
 	// for debug
@@ -25,6 +29,7 @@ func main() {
 	serveMux := http.NewServeMux()
 	serveMux.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir(staticDir))))
 	serveMux.HandleFunc("/etags/", Etags)
+	serveMux.HandleFunc("/caches/", Caches)
 	serveMux.HandleFunc("/requests", Requests)
 	serveMux.HandleFunc("/chunks", Chunks)
 
@@ -138,6 +143,76 @@ func Etags(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Etag", fileEtag)
 	writeFile(w, filePath)
+}
+
+func Caches(w http.ResponseWriter, r *http.Request) {
+	if !strings.HasPrefix(r.URL.Path, "/caches/") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if r.URL.Path == "/caches/" {
+		files, err := ioutil.ReadDir(staticDir)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		buf := &bytes.Buffer{}
+
+		expires := r.Form.Get("expires")
+		chunked := r.Form.Get("chunked")
+		var qs string
+		if _, err := strconv.ParseUint(expires, 10, 32); err == nil {
+			qs += "&expires=" + expires
+		}
+		if chunked == "false" {
+			qs += "&chunked=" + chunked
+		}
+		if len(qs) > 0 {
+			qs = "?" + qs[1:]
+		}
+
+		for _, file := range files {
+			fmt.Fprint(buf, "<!DOCTYPE html>\n<html><head><title>caches</title></head>\n<body>\n")
+			fmt.Fprintf(buf, "<a href=\"%v\">%v</a><br/>\n", "/caches/" + url.PathEscape(file.Name()) + qs, html.EscapeString(file.Name()))
+			fmt.Fprint(buf, "</body></html>\n")
+		}
+		w.Write(buf.Bytes())
+		return
+	}
+
+	filePath := staticDir + "/" + strings.TrimPrefix(r.URL.Path, "/caches/")
+	file, err := os.Open(filePath)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	defer file.Close()
+
+	expires := r.Form.Get("expires")
+	if len(expires) > 0 {
+		if _, err := strconv.ParseUint(expires, 10, 32); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%v", expires))
+	}
+
+	chunked := r.Form.Get("chunked")
+	if chunked == "false" {
+		bs, err := ioutil.ReadAll(file)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Length", strconv.Itoa(len(bs)))
+		w.Write(bs)
+	} else {
+		io.Copy(w, file)
+	}
 }
 
 func Proxy(w http.ResponseWriter, r *http.Request) {
