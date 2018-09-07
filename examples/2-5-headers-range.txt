@@ -1,0 +1,4 @@
+# command
+curl -H 'Range: bytes=0-4'  http://localhost:8080/static/simple.txt
+curl -H 'Range: bytes=7-'  http://localhost:8080/static/simple.txt
+

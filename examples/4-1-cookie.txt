@@ -1,0 +1,7 @@
+# set cookie
+http://www.http-features.local:8080/cookies?value=abc&domain=www.http-features.local&path=%2F
+http://www.http-features.local:8080/cookies?value=abc&domain=www.http-features.local&path=%2Fcookies%2F
+http://www.http-features.local:8080/cookies?value=abc&domain=www.http-features.local&path=%2Fcookies%2Fsub1%2F
+
+# check cookie
+http://www.http-features.local:8080/cookies/sub1/sub2

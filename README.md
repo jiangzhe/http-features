@@ -64,14 +64,24 @@
 ## Header
 
 - Host
-- Accept
 - Connection
-- Transfer-Encoding
 - Content-Type
 - Content-Length
+- Location
+- Accept, Accept-Encoding, Accept-Language, Accept-Ranges
+- Transfer-Encoding
 - Expires, Cache-Control
 - Last-Modified, If-Modified-Since
 - Etag, If-Match, If-None-Match
+- Referer, Referrer-Policy
+- Accept-Ranges, Range, Content-Range
+- Content-Disposition
+- Access-Control-Allow-<xxx>
+- Authorization
+- Set-Cookie, Cookie
+- ...
+
+[MDN HTTP Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers)
 
 ## Cookie
 
@@ -149,6 +159,8 @@ HTTP/1.1 允许在持久连接上使用请求管道，即在响应到达前发�
 ## Proxy
 
 - 反向代理
+
+
 
 - HTTP隧道
 

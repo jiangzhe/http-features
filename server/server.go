@@ -30,8 +30,12 @@ func main() {
 	serveMux.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir(staticDir))))
 	serveMux.HandleFunc("/etags/", Etags)
 	serveMux.HandleFunc("/caches/", Caches)
+	serveMux.HandleFunc("/redirect/", Redirect)
 	serveMux.HandleFunc("/requests", Requests)
 	serveMux.HandleFunc("/chunks", Chunks)
+	serveMux.HandleFunc("/cookies", Cookies)
+	serveMux.HandleFunc("/cookies/sub1", Cookies)
+	serveMux.HandleFunc("/cookies/sub1/sub2", Cookies)
 
 	server := &http.Server{
 		Addr: ":8080",
@@ -50,6 +54,8 @@ func main() {
 // function to show request information
 func Requests(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
+	writeLine(w, "-- method")
+	writeLine(w, r.Method)
 	writeLine(w, "-- protocol")
 	writeLine(w, r.Proto)
 	writeLine(w, "-- request uri")
@@ -216,7 +222,6 @@ func Caches(w http.ResponseWriter, r *http.Request) {
 }
 
 func Proxy(w http.ResponseWriter, r *http.Request) {
-
 	h, ok := w.(http.Hijacker)
 	if !ok {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -279,6 +284,86 @@ func Proxy(w http.ResponseWriter, r *http.Request) {
 			proxyConn.Close()
 		})
 	}
+}
+
+var redirectCodes = []string{"301", "302", "307", "308"}
+
+func Redirect(w http.ResponseWriter, r *http.Request) {
+	if !strings.HasPrefix(r.URL.Path, "/redirect/") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if r.URL.Path == "/redirect/" {
+		buf := new(bytes.Buffer)
+
+		fmt.Fprint(buf, "<!DOCTYPE html>\n<html><head><title>redirects</title></head>\n<body>\n")
+
+		buf.WriteString("<div><p>GET Redirect - qs: key1=value1</p>")
+		for _, code := range redirectCodes {
+			fmt.Fprintf(buf, "<a href=\"/redirect/%v?key1=value1\">Redirect %v</a><br/>\n", code, code)
+		}
+		buf.WriteString("</div>")
+
+		buf.WriteString("<div><p>POST Redirect - qs: key1=value1 form: fkey1=fvalue1</p>")
+		for _, code := range redirectCodes {
+			fmt.Fprintf(buf, `<form method="post" action="/redirect/%v?key1=value1">`, code)
+			buf.WriteString(`<input name="fkey1" value="fkey2" style="display:none"/>`)
+			fmt.Fprintf(buf, `<label>Redirect %v<input type="submit" value="post"/></label>`, code)
+			buf.WriteString("</form><br/>")
+		}
+		buf.WriteString("</div>")
+
+		fmt.Fprint(buf, "</body></html>\n")
+		w.Write(buf.Bytes())
+		return
+	}
+
+	code, err := strconv.ParseUint(strings.TrimPrefix(r.URL.Path, "/redirect/"), 10, 32)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	var q string
+	if len(r.URL.RawQuery) != 0 {
+		q = "?" + r.URL.RawQuery
+	}
+	w.Header().Set("Location", "/requests" + q)
+	w.WriteHeader(int(code))
+}
+
+func Cookies(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	value := r.Form.Get("value")
+	domain := r.Form.Get("domain")
+	path := r.Form.Get("path")
+	secure := r.Form.Get("secure")
+	httpOnly := r.Form.Get("httpOnly")
+
+	if len(value) == 0 {
+		w.Write([]byte("no action"))
+		return
+	}
+
+	var cookie = "id=" + value
+	if len(domain) > 0 {
+		cookie += "; Domain=" + domain
+	}
+	if len(path) > 0 {
+		cookie += "; path=" + path
+	}
+	if secure == "true" {
+		cookie += "; Secure"
+	}
+	if httpOnly == "true" {
+		cookie += "; httpOnly"
+	}
+
+	w.Header().Set("Set-Cookie", cookie)
+	w.Write([]byte("cookie should be set as below:\n"))
+	w.Write([]byte(cookie))
 }
 
 // helper functions
